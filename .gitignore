@@ -3,8 +3,12 @@
 /*
 
 # But not these files...
+
 !.gitignore
 !www/
 !www/*/
 !www/html/*
+!www/html/static/*
+!www/html/js/*
+!www/html/images/*
 !README.md

@@ -1,0 +1,215 @@
+{% extends 'layout.html' %}
+
+{% block head %}
+<title>KASS Dashboard</title>
+{% endblock %}
+
+{% block sidebar %}
+<div class="position-sticky pt-2">
+    <ul class="nav flex-column">
+        <li class="nav-item">
+            <a class="nav-link active" aria-current="page" href="#top">
+                Dashboard
+            </a>
+        </li>
+        <li class="ms-4 nav-item">
+            <a class="nav-link text-secondary" href="#video">
+                Video feed
+            </a>
+        </li>
+        <li class="ms-4 nav-item">
+            <a class="nav-link text-secondary" href="#controls">
+                Controls
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('documentation') }}">
+                Documentation
+            </a>
+        </li>
+    </ul>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2"><a name="top">Welcome back, {{ username }}!</a></h1>
+
+    <body onload="startTime()">
+        <div id="txt"></div>
+</div>
+
+<h2 class="h3"><a name="video">Main video feed</a></h2>
+    <body>
+        <img src="http://192.168.1.138:8081/">
+    </body>
+
+<p>Door is: {{uks}}</p>
+
+<h2 class="h3"><a name="controls">Controls</a></h2>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-5 me-1 mb-1 mt-1">
+            <div class="card h-100">
+                <div class="card-header">
+                    Light controls
+                </div>
+
+                <div class="card-body">
+                    <div class="form-check form-switch form-switch-md">
+                        <input class="form-check-input" type="checkbox" id="flexSwitch1" name="toggle1"
+                            onclick="kontroll()" />
+                        <div>
+                            <label class="form-check-label" style="margin-left:10px;" for="flexSwitchLight">Light
+                                override</label>
+                        </div>
+                    </div>
+                    <div id="text1" style="display:none">
+                        <label class="form-check-label" style="margin-left:10px;" for="flexSwitchLight">Turn on or off
+                            manually</label>
+                        <input type="hidden" name="manual" value="0" />
+                        <button type="button" id="on" class="btn btn-outline-primary">On</button> <button id="off"
+                            type="button" class="btn btn-outline-primary">Off</button>
+                    </div>
+                    <p>{{ ajad1 }}</p>
+                    <p>{{ ajad2 }}</p>
+                </div>
+                <div class="card-footer text-muted" id="tekst">
+                    {{ tekst }}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-5 mb-1 mt-1">
+            <div class="card h-100">
+                <div class="card-header">
+                    Temperature controls
+                </div>
+                <div class="card-body">
+                    <div class="form-check form-switch form-switch-md">
+                        <input class="form-check-input" type="checkbox" id="flexSwitch2" name="toggle1"
+                            onclick="kontrolltemp()" />
+                        <div>
+                            <label class="form-check-label" style="margin-left:10px;" for="flexSwitchRad">Radiator
+                                override</label>
+                        </div>
+                    </div>
+                    <div id="text2" style="display:none">
+                        <label class="form-check-label" style="margin-left:10px;" for="flexSwitchRad">Turn on or off
+                            manually</label>
+                        <input type="hidden" name="manualrad" value="0" />
+                        <button type="button" id="ton" class="btn btn-outline-primary">On</button> <button id="toff"
+                            type="button" class="btn btn-outline-primary">Off</button>
+                    </div>
+                    <div class="mt-4">
+                        <form action="{{ url_for('slider') }}" method="post">
+                            <input type="range" name="temp" min="8" max="12" value={{ threshhold }}
+                                oninput="this.form.amountInput.value=this.value" class="slider" id="range" />
+                            <input type="number" name="amountInput" min="8" max="12" value={{ threshhold }}
+                                oninput="this.form.temp.value=this.value" />
+                            <INPUT type="submit" name="Send">
+                        </form>
+                    </div>
+                    <p class="mt-4"> Current temperature is: {{ tempv }}&#8451; </p>
+                </div>
+                <div class="card-footer text-muted" id="tekstrad">
+                    {{ tekstrad }}
+                </div>
+            </div>
+        </div>
+        
+        <script>
+            function kontrolltemp() {                              //makes manual buttons invisible unless checkbox is ticked
+                // Get the checkbox
+                var checkBox = document.getElementById("flexSwitch2");
+                // Get the output text
+                var text = document.getElementById("text2");
+
+                // If the checkbox is checked, display the output text
+                if (checkBox.checked == true) {
+                    text.style.display = "block";
+                } else {
+                    text.style.display = "none";
+                    const request = new XMLHttpRequest();
+                    request.open('POST', '/radautomatic');             //sends signal to flask when override is off, where flask will assign a proper value to status
+                    request.onload = () => {
+                        const response = request.responseText;
+                        document.getElementById('tekstrad').innerHTML = response;  //displays current status on website
+                    };
+                    request.send();
+                }
+            }
+        </script>
+        <script>
+            function kontroll() {
+                // Get the checkbox
+                var checkBox = document.getElementById("flexSwitch1");
+                // Get the output text
+                var text = document.getElementById("text1");
+
+                // If the checkbox is checked, display the output text
+                if (checkBox.checked == true) {
+                    text.style.display = "block";
+                } else {
+                    text.style.display = "none";
+                    const request = new XMLHttpRequest();
+                    request.open('POST', '/automatic');
+                    request.onload = () => {
+                        const response = request.responseText;
+                        document.getElementById('tekst').innerHTML = response;
+                    };
+                    request.send();
+                }
+            }
+        </script>
+        <script type="text/javascript">
+            document.addEventListener('DOMContentLoaded', () => {
+                document.querySelectorAll('button').forEach(button => {
+                    button.onclick = () => {
+                        const request = new XMLHttpRequest();
+                        request.open('POST', `/${button.id}`);
+                        if ((button.id == "on") || (button.id == "off")) {         //checks if lights button was clicked
+                            request.onload = () => {
+                                const response = request.responseText;
+                                document.getElementById('tekst').innerHTML = response;
+                            }
+                        };
+                        if ((button.id == "ton") || (button.id == "toff")) {            //checks if temperature button was pressed
+                            request.onload = () => {
+                                const response = request.responseText;
+                                document.getElementById('tekstrad').innerHTML = response;  //Sends value back to html
+                            }
+                        };
+                        request.send();
+                    };
+                });
+            });
+        </script>
+        <script>
+            function startTime() {     //current time code for website
+                var today = new Date();
+                var h = today.getHours();
+                var m = today.getMinutes();
+                var s = today.getSeconds();
+                m = checkTime(m);
+                s = checkTime(s);
+                document.getElementById('txt').innerHTML =
+                    "Time is:" + h + ":" + m + ":" + s;
+                var t = setTimeout(startTime, 500);
+            }
+            function checkTime(i) {
+                if (i < 10) { i = "0" + i };  // add zero in front of numbers < 10
+                return i;
+            }
+        </script>
+        <script>
+            {
+                var slider = document.getElementById("range");   //slider code
+                output.innerHTML = slider.value;
+
+                slider.oninput = function () {
+                    output.innerHTML = this.value;
+                }
+            }
+        </script>
+
+        {% endblock %}

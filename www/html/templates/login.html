@@ -6,23 +6,33 @@
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<meta name="author" content="Mark Otto, Jacob Thornton, and Bootstrap contributors">
-    <meta name="generator" content="Hugo 0.80.0">
+	<meta name="generator" content="Hugo 0.80.0">
 	<!-- The page supports both dark and light color schemes,
          and the page author prefers / default is dark -->
 	<meta name="color-scheme" content="light dark">
 	<!-- Bootstrap -->
-	<link href="css/bootstrap-nightshade.min.css" rel="stylesheet">
+	<link rel="stylesheet" href="{{ url_for('static', filename='bootstrap-nightshade.min.css') }}">
 	<!-- Custom styles -->
-	<link href="css/signin.css" rel="stylesheet">
-	<title>KASS 401</title>
+	<link rel="stylesheet" href="{{ url_for('static', filename='signin.css') }}">
+	<!-- Page specific -->
+	<title>KASS Login</title>
+	<link rel="icon" href="{{ url_for('static', filename='rubergkawai.png') }}" type="image/png">
 </head>
 
 <body class="text-center">
 	<main class="form-signin">
-		<img class="mb-4" src="images/ruberggasp.png" alt="" width="57" height="72">
-		<h1 class="h3 mb-3 fw-normal">401 - NO ACCESS</h1>
-		<p>Whoa, ya ain't got no access, so get lost!</p>
-		<a href="index.nginx-debian.html" class="mt-1 w-100 btn btn-lg btn-outline-primary" role="button">Back to login</a>
+		<img class="mb-4" src="{{ url_for('static', filename='rubergkawai.png') }}" alt="" width="57" height="72">
+		<h1 class="h3 mb-3 fw-normal">KASS Login</h1>
+		<form action="{{ url_for('login') }}" method="post">
+			<div><p class="text-warning">{{ msg }}</p></div>
+			<label for="username" class="visually-hidden">Username</label>
+			<input type="username" id="username" name="username" class="form-control" placeholder="Username" required
+				autofocus>
+			<label for="password" class="visually-hidden">Password</label>
+			<input type="password" id="password" name="password" class="form-control" placeholder="Password" required>
+			<button class="w-100 btn btn-lg btn-primary" type="submit">Sign in</button>
+		</form>
+		<a href="{{ url_for('register') }}" class="mt-1 w-100 btn btn-lg btn-outline-primary" role="button">Register</a>
 		<!-- Darkmode button -->
 		<div class="w-50 btn-group ms-auto" role="group">
 			<a id="darkmode-button" class="mt-2 btn btn-outline-secondary">Dark mode<i class="d-none d-light-inline"
@@ -31,9 +41,9 @@
 		<p class="mt-5 mb-3 text-muted">Sponsored by RubergVPN, 2021</p>
 	</main>
 	<!-- Bootstrap Bundle with Popper -->
-	<script type="text/javascript" src="js/bootstrap.bundle.min.js"></script>
+	<script src="{{url_for('static', filename='bootstrap.bundle.min.js')}}"></script>
 	<!-- Darkmode scripts -->
-	<script src="js/darkmode.min.js"></script>
+	<script src="{{url_for('static', filename='darkmode.min.js')}}"></script>
 	<script>
 		document.querySelector("#darkmode-button").onclick = function (e) {
 			darkmode.toggleDarkMode();

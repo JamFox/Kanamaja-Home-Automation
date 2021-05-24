@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="author" content="Mark Otto, Jacob Thornton, and Bootstrap contributors">
+    <meta name="generator" content="Hugo 0.80.0">
+    <!-- The page supports both dark and light color schemes -->
+    <meta name="color-scheme" content="light dark">
+    <!-- Bootstrap -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap-nightshade.min.css') }}">
+    <!-- Custom styles -->
+    <link href="{{ url_for('static', filename='dashboard.css') }}" rel="stylesheet">
+    {% block head %}{% endblock %}
+    <link rel="icon" href="{{ url_for('static', filename='rubergkawai.png') }}" type="image/png">
+</head>
+
+<body>
+
+    <header class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0 shadow" style="background-color: #e3f2fd;">
+        <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3" href="#">KASS</a>
+        <a id="darkmode-button" class="mt-1 mb-1 btn btn-dark active ms-auto">Dark mode<i class="d-none d-light-inline"
+                title="Toggle dark mode"></i></a>
+        <a class="ms-2 me-2 btn btn-dark active" href="{{ url_for('logout') }}">Sign out</a>
+        <button class="navbar-toggler d-md-none collapsed ms-auto" type="button" data-bs-toggle="collapse"
+            data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false"
+            aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+    </header>
+
+    <div class="container-fluid">
+        <div class="row">
+            <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse" style="top: 0px;">
+                {% block sidebar %}{% endblock %}
+            </nav>
+
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="{{url_for('static', filename='bootstrap.bundle.min.js')}}"></script>
+    <!-- Darkmode scripts -->
+    <script src="{{url_for('static', filename='darkmode.min.js')}}"></script>
+    <script>
+        document.querySelector("#darkmode-button").onclick = function (e) {
+            darkmode.toggleDarkMode();
+        }
+        document.querySelector("#darkmode-off-button").onclick = function (e) {
+            darkmode.setDarkMode(false); // save=true is default
+        }
+        document.querySelector("#darkmode-on-button").onclick = function (e) {
+            darkmode.setDarkMode(true); // save=true is default
+        }
+        document.querySelector("#darkmode-forget").onclick = function (e) {
+            darkmode.resetDarkMode();
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,231 @@
+{% extends 'layout.html' %}
+
+{% block head %}
+<title>KASS Documentation</title>
+{% endblock %}
+
+{% block sidebar %}
+<div class="position-sticky pt-3">
+    <ul class="nav flex-column">
+        <li class="nav-item">
+            <a class="nav-link" aria-current="page" href="{{ url_for('dashboard') }}">
+                Dashboard
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link active" href="#top">
+                Documentation
+            </a>
+        </li>
+        <li class="ms-4 nav-item">
+            <a class="nav-link text-secondary" href="#tech">
+                Technologies used
+            </a>
+        </li>
+        <li class="ms-4 nav-item">
+            <a class="nav-link text-secondary" href="#setup">
+                Setup
+            </a>
+        </li>
+        <li class="ms-4 nav-item">
+            <a class="nav-link text-secondary" href="#usage">
+                Usage
+            </a>
+        </li>
+    </ul>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h1"><a name="top">KASS documentation</a></h1>
+</div>
+
+
+<h2 class="h3"><a name="tech">Technologies used</a></h2>
+<p><b>OS:</b> <a href="https://www.raspberrypi.org/software/operating-systems/">Raspberry Pi OS Lite (headless)</a></p>
+<p><b>Webserver:</b> Nginx</p>
+<p><b>Serverside:</b> Flask</p>
+<p><b>WSGI:</b> Gunicorn</p>
+<p><b>Database engine:</b> MariaDB</p>
+<p><b>CSS and JS:</b> <a href="https://getbootstrap.com">Bootstrap 5 beta2's</a> <a
+        href="https://vinorodrigues.github.io/bootstrap-dark/">darkmode fork</a></p>
+
+
+<h2 class="h3"><a name="setup">Setup</a></h2>
+
+<h3 class="h5">Webserver setup with Nginx</h3>
+<p>Install Nginx with <code>sudo apt install nginx</code> and start the Nignx service with
+    <code>sudo /etc/init.d/nginx start</code></p>
+
+<p>Navigate to <code>sudo nano /etc/nginx/nginx.conf</code></p>
+<p>[From <a
+        href="https://www.e-tinkers.com/2018/08/how-to-properly-host-flask-application-with-nginx-and-guincorn/">e-tinkers</a>]
+    Make the following changes for improving potential performance:<br />
+    1) Uncommented the <strong>multi_accept</strong> directive and set to <strong>on</strong>, which informs each
+    worker_process to accept all new connections at a time, opposed to accepting one new connection at a time.</p>
+<p>2) Change the <strong>keepalive_timeout</strong> from default <strong>65</strong> to <strong>30</strong>. The
+    keepalive_timeout determines how many seconds a connection to the client should be kept open before it’s closed by
+    Nginx. This directive should be lowered so that idle connections can be closed earlier at 30 seconds instead of 65
+    seconds.</p>
+<p>3) Uncomment the <strong>server_tokens</strong> directive and ensure it is set to <strong>off</strong>. This will
+    disable emitting the Nginx version number in error messages and response headers.</p>
+<p>4) Uncomment the <strong>gzip_vary on</strong>, this tell proxies to cache both the gzipped and regular version of a
+    resource where a non-gzip capable client would not display gibberish due to the gzipped files.</p>
+<p>5) Uncomment the <strong>gzip_proxied</strong> directive and set it to <strong>any</strong>, which will ensure all
+    proxied request responses are gzipped.</p>
+<p>6) Uncomment the <strong>gzip_comp_level</strong> and change the value to <strong>5</strong>. Level provide
+    approximate 75% reduction in any ASCII type of files to achieve almost same result as level 9 but not have
+    significant impact on CPU usage as level 9.</p>
+<p>7) Uncomment <strong>gzip_http_version 1.1;</strong>, this will enable compression both for HTTP/1.0 and HTTP/1.1.
+</p>
+<p>8) Add a line <strong>gzip_min_length 256;</strong> right before <strong>gzip_types</strong> directive, this will
+    ensure that the file smiler than 256 bytes would not be gzipped, the default value was set at 20 bytes which is too
+    small and could cause the gzipped file even bigger due to the overhead.</p>
+<p>9) Replace the <strong>gzip_types</strong> directive with the following more comprehensive list of MIME types. This
+    will ensure that JavaScript, CSS and even SVG file types are gzipped in addition to the HTML file type.</p>
+<pre>
+gzip_types
+    application/atom+xml 
+    application/javascript 
+    application/json 
+    application/rss+xml 
+    application/vnd.ms-fontobject 
+    application/x-font-ttf 
+    application/x-web-app-manifest+json 
+    application/xhtml+xml 
+    application/xml 
+    font/opentype 
+    image/svg+xml 
+    image/x-icon 
+    text/css 
+    text/plain 
+    text/x-component 
+    text/javascript 
+    text/xml;
+</pre>
+
+<p>Create new config with <code>sudo nano /etc/nginx/sites-available/app</code> and add the following:</p>
+<pre>server {
+listen 80 default_server;
+listen [::]:80;
+
+root /var/www/html;
+
+server_name kanamaja.ru; #add to network hosts file with rpis ip like so 192.168.1.109 ruberg.ru
+
+location /static {
+alias /var/www/html/static;
+}
+
+location / {
+try_files $uri @wsgi;
+}
+
+location @wsgi {
+proxy_pass http://unix:/tmp/gunicorn.sock;
+include proxy_params;
+}
+
+location ~* .(ogg|ogv|svg|svgz|eot|otf|woff|mp4|ttf|css|rss|atom|js|jpg|jpeg|gif|png|ico|zip|tgz|gz|rar|bz2|doc|xls|exe|ppt|tar|mid|midi|wav|bmp|rtf)$ {
+access_log off;
+log_not_found off;
+expires max;
+}
+}
+</pre>
+<p>The location @wsgi block proxies HTTP requests to the <code>/tmp/gunicorn.sock</code> unix socket where Flask app
+    will listen to, it also setup some common HTTP headers defined inside the <code>/etc/nginx/proxy_params</code> file.
+</p>
+
+<p>Then remove default config and create a new symbolic link:</p>
+
+<pre>cd /etc/nginx/sites-enabled/
+sudo rm default
+sudo ln -s /etc/nginx/sites-available/app .
+</pre>
+
+<p>After making changes to the Nginx configuration, restart the service with: <code>sudo systemctl restart nginx</code>
+</p>
+
+<h3 class="h5">Database setup</h3>
+<p>Install MariaDB (MySQL fork) with <code>sudo apt install mariadb-server mariadb-client</code> and enable it to start
+    on boot with <code>sudo systemctl enable mariadb.service</code></p>
+<p>Secure the database with <code>sudo mysql_secure_installation</code></p>
+<p>Then enter MariaDB with <code>sudo mysql</code> and create a new database with the name "auth" with
+    <code>CREATE DATABASE auth;</code> and enter enter the database to modify it with <code>USE auth;</code></p>
+<p>Create table for account info:
+<pre><code>CREATE TABLE accounts (
+id INT NOT NULL AUTO_INCREMENT,
+username VARCHAR(50) NOT NULL,
+password VARCHAR(255) NOT NULL,
+PRIMARY KEY (id)
+) DEFAULT CHARSET=utf8;</code></pre>
+</p>
+<p>Then enter MariaDB with <code>sudo mysql</code> and create a new user (by default, new users don't have any
+    permissions) for authentication purposes with <code>CREATE USER 'ruberg'@'localhost' IDENTIFIED BY 'ruberg';</code>
+</p>
+<p>"ruberg" is used as a template here. If you want to create the user with another name and password you must also change them accordingly in 'app.py'</p>
+<p>Add read only permissions to new user with <code>GRANT SELECT ON auth.accounts TO 'ruberg'@'localhost';</code> and
+    refresh privileges with <code>FLUSH PRIVILEGES;</code></p>
+<p>To add new users to the database use
+    <code>INSERT INTO accounts (username, password) VALUES ('ruberg', '$2y$10$.0y6NZBfztbXm362M1dAne1HT41XK4teakMj.1zWvVJDjzxoR4m2y');</code></p>
+    <p>NOTE: only use hashed passwords from /register, current setup compares hashes, plain passwords DO NOT WORK!</p>
+
+<h3 class="h5">Flask setup (with Gunicorn)</h3>
+<p><code>sudo apt-get install python3-pip python3-mysql.connector</code> and <code>sudo pip3 install flask</code></p> 
+<p><code>sudo pip3 install gunicorn</code> and <code>flask-sqlalchemy flask-login passlib</code> and try gunicorn manually in <code>/var/html/www</code> with
+    <code>gunicorn --bind=unix:/tmp/gunicorn.sock --workers=4 app:app</code> (NOTE: <code>--workers=4</code> refers to
+    using 4 cores here, set according to your system!)</p>
+<p>To run a Gunicorn service upon boot <code>sudo nano /etc/systemd/system/gunicorn.service</code></p>
+<p>Paste in the configuration and change accordingly:</p>
+<pre>[Unit]
+Description=gunicorn daemon for /var/www/html/app.py
+After=network.target
+
+[Service]
+User=pi
+Group=www-data
+RuntimeDirectory=gunicorn
+WorkingDirectory=/var/www/html/
+ExecStart=/usr/local/bin/gunicorn --bind=unix:/tmp/gunicorn.sock --workers=4 app:app
+ExecReload=/bin/kill -s HUP $MAINPID
+ExecStop=/bin/kill -s TERM $MAINPID
+
+[Install]
+WantedBy=multi-user.target
+</pre>
+<p><code>sudo systemctl enable gunicorn</code> and <code>sudo systemctl start gunicorn</code> and to test
+    <code>sudo systemctl status gunicorn</code></p>
+<p>If you make changes to the <code>gunicorn.service</code> or <code>app.py</code> file, reload the daemon service
+    definition and restart the Gunicorn process by typing:</p>
+<p><code>sudo systemctl daemon-reload</code> and <code>sudo systemctl restart gunicorn</code> </p>
+
+
+<h2 class="h3"><a name="usage">Usage</a></h2>
+
+<h3 class="h5">Get the files with Git</h3>
+<p>Navigate to <code>cd /var/</code> and clone the repository with <code>git clone</code></p>
+<p>To clone the contents directly without the source folder use: <code>git init</code>
+    <code>git remote add origin git@github.com:me/name.git</code> <code>git pull origin master</code></p>
+
+<h3 class="h5">Nginx usage</h3>
+<p>Start the Nignx service with <code>sudo systemctl start nginx</code></p>
+<p>Stop the Nignx service with <code>sudo systemctl stop nginx</code></p>
+<p>Whenever you make changes to the Nginx configuration, you need to restart or reload the webserver processes. Execute
+    the following command to restart the Nginx service: <code>sudo systemctl restart nginx</code></p>
+
+<h3 class="h5">Database usage</h3>
+<p>Current authentication uses hashed password compare function, plain passwords DO NOT WORK!. To add new users to the database use:
+    <code>INSERT INTO accounts (username, password) VALUES ('ruberg', '$2y$10$.0y6NZBfztbXm362M1dAne1HT41XK4teakMj.1zWvVJDjzxoR4m2y');</code></p>
+<p>To generate hashed passwords use <code>/register</code>, also accessible from the webserver's index/login page.</p>
+
+<p>Table for users uses the following structure:
+<pre><code>accounts (
+id INT NOT NULL AUTO_INCREMENT,
+username VARCHAR(50) NOT NULL,
+password VARCHAR(255) NOT NULL,
+PRIMARY KEY (id)
+) DEFAULT CHARSET=utf8;</code></pre>
+</p>
+{% endblock %}
